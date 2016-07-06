@@ -47,7 +47,7 @@ template<typename T>
 Point<T>::Point (vector<T> coordinates, int id)
 {
 	cout << "!!!Creating point!!!" << endl;
-	this->p = coordinates;
+	this->coordinates = coordinates;
 	this->id = id;
 	this->str += "(";
 	stringstream ss;
