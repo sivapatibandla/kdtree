@@ -10,6 +10,7 @@
 #include <string>
 #include "kdtree.h"
 
+
 using namespace std;
 
 std::vector<std::string> split(const std::string &text, char sep) {
@@ -25,13 +26,15 @@ std::vector<std::string> split(const std::string &text, char sep) {
 
 int main() {
 
-	cout << "!!!Application to build a KD Tree!!!" << endl; // prints !!!Hello World!!!
+	cout << "!!!Application to build a KD Tree and save it to disk!!!" << endl; // prints !!!Hello World!!!
 
 	ifstream file ( "/Users/Siva/Documents/workspace/kdtree/src/points.csv", ifstream::in );
 
 	string line;
 
+	// parse data points from input file
 	int point_id = 0;
+	vector <Point<float> > points;
 	while (file.good())
 	{
 		getline(file, line);
@@ -41,12 +44,18 @@ int main() {
 		{
 			coordinates.push_back(stof(*it));
 		}
-		Point<float> point(coordinates, point_id);
+		Point<float> point (coordinates, point_id);
+		points.push_back(point);
 
 		cout << "line: " << line << " " << "point: " << point << endl;
 		point_id++;
 	}
 
+	// build kd-tree
+	KDTree<Point<float>, float> kdtree;
+	kdtree.add_points(points);
+
+	//cout << kdtree << endl;
+
 	return 0;
 }
-
