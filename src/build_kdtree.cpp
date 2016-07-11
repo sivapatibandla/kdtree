@@ -25,33 +25,52 @@ std::vector<std::string> split(const std::string &text, char sep) {
   return tokens;
 }
 
-vector <Point<float> *> read_points_from_file ()
+vector <Point<float> *> read_points_from_file (const char *file_name, int &num_dimensions)
 {
-	//ifstream file ( "/Users/Siva/Documents/workspace/kdtree/src/points.csv", ifstream::in );
-	ifstream file ( "/Users/Siva/Documents/workspace/kdtree/src/sample_data.csv", ifstream::in );
+	ifstream file ( file_name, ifstream::in );
 
-	string line;
-
-	// parse data points from input file
 	int point_id = 0;
 	vector <Point<float> *> points;
+
+	// Extract no. of dimensions
+	string line;
+	vector<std::string> words;
+	if (file.good())
+	{
+		getline(file, line);
+		words = split (line, ',');
+		num_dimensions = words.size();
+		file.seekg (0, ios::beg);
+	}
+
+	// extract points
 	while (file.good())
 	{
 		getline(file, line);
-		vector<std::string> words = split (line, ',');
+		words = split (line, ',');
+		//assert (words.size() == num_dimensions);
+		// ignore lines which are not properly formatted. TODO: wrap this in a try & catch block
+		if (words.size() != num_dimensions) {point_id++;continue;}
+
+		//cout << "line " << line << endl;
+		// extract coordinates
 		vector<float> coordinates;
-		//assert (words.size() < 6);
-		cout << "num words " << words.size() << endl;
-		if (words.size() < 3) break;
 		for (vector<string>::iterator it = words.begin(); it!=words.end(); it++)
 		{
 			coordinates.push_back(stof(*it));
 		}
-		//assert (coordinates.size() == 3);
-		Point<float> *point = new Point<float>(coordinates, point_id);
-		points.push_back(point);
 
-		//cout << "line: " << line << " " << "point: " << *point << " id " << point_id << endl;
+		Point<float> *point = NULL;
+		try
+		{
+		  point = new Point<float>(coordinates, point_id);
+		  points.push_back(point);
+		}
+		catch(std::bad_alloc& exc)
+		{
+		  cout << "bad alloc" << endl;
+		}
+
 		point_id++;
 	}
 	file.close();
@@ -63,14 +82,18 @@ int main() {
 
 	cout << "!!!Application to build a KD Tree and save it to disk!!!" << endl; // prints !!!Hello World!!!
 
-	vector <Point<float> *> points = read_points_from_file ();
+	int num_dimensions = 0;
+	const char *file_name = "/Users/Siva/Documents/workspace/kdtree/src/sample_data.csv";
+	//const char *file_name = "/Users/Siva/Documents/workspace/kdtree/src/points.csv";
+	vector <Point<float> *> points = read_points_from_file (file_name, num_dimensions);
 
 	// build kd-tree
-	cout << "reading file complete, build tree " << endl;
-	KDTree<Point<float>, float> kdtree(points[0]->get_coordinates().size());
-	kdtree.add_points(points);
-
-	//cout << kdtree << endl;
+	if (points.size() > 0)
+	{
+		KDTree<Point<float>, float> kdtree(num_dimensions);
+		kdtree.add_points(points);
+		cout << kdtree << endl;
+	}
 
 	return 0;
 }

@@ -14,6 +14,7 @@
 #include <limits>
 #include <array>
 #include <deque>
+#include <cassert>
 
 using namespace std;
 
@@ -44,7 +45,7 @@ public:
 	}
 
 	// get the coordinates of all dimensions of the point
-	vector<TCoordinate> get_coordinates () const
+	const vector<TCoordinate>& get_coordinates () const
 	{
 		return this->coordinates;
 	}
@@ -69,7 +70,6 @@ public:
 	 */
 	KDTreeNode ()
 	{
-		cout << "!!!Creating tree node!!!" << endl;
 		this->splitting_axis = 0;
 		this->splitting_point = 0;
 		this->left = NULL;
@@ -168,7 +168,7 @@ void KDTree<TPoint, TCoordinate>::build_tree (
 		typename vector<TPoint *>::iterator start,
 		typename vector<TPoint *>::iterator end)
 {
-	cout << "build_tree() called with start " << start - points.begin() << " end " << end - points.begin() << endl;
+	//cout << "build_tree() called with start " << start - points.begin() << " end " << end - points.begin() << endl;
 
 	// KD-Tree can't be constructed without points so return immediately
 	if ((end-start) == 0)
@@ -187,7 +187,7 @@ void KDTree<TPoint, TCoordinate>::build_tree (
 	 */
 	if ((end-start)== 1)
 	{
-		cout << "size of sub-array 1 -- assigning the point to the leaf node " << *start << endl;
+		//cout << "size of sub-array 1 -- assigning the point to the leaf node " << *start << endl;
 		const Point<TCoordinate> *p = *start;
 		node->set_point(p);
 		return;
@@ -196,7 +196,7 @@ void KDTree<TPoint, TCoordinate>::build_tree (
 	node->splitting_axis = KDTree<TPoint, TCoordinate>::compute_split_axis(points, start, end);
 	node->splitting_point = KDTree<TPoint, TCoordinate>::compute_split_point(points, start, end, node->splitting_axis);
 
-	cout << "split point " << node->splitting_point << " split axis " << node->splitting_axis << endl;
+	//cout << "split point " << node->splitting_point << " split axis " << node->splitting_axis << endl;
 	build_tree (&(*root)->left, points, start, end - (end-start)/2);
 	build_tree (&(*root)->right, points, end - (end-start)/2, end);
 }
@@ -237,7 +237,7 @@ TCoordinate KDTree<TPoint, TCoordinate>::compute_split_point(
 	Comparator comp_obj(split_axis);
 	sort (start, end, comp_obj);
 	Point<TCoordinate> *split_point = points[(end-start)/2];
-	cout << "Computed split point for axis " << split_axis << " point " << split_point->get_coordinate(split_axis) <<  endl;
+	//cout << "Computed split point for axis " << split_axis << " point " << split_point->get_coordinate(split_axis) <<  endl;
 	return split_point->get_coordinate(split_axis);
 }
 
@@ -272,7 +272,7 @@ int KDTree<TPoint, TCoordinate>::compute_split_axis(
 		}
 
 	}
-	cout << "Computed max_range " << max_range << " for split axis " << split_axis << endl;
+	//cout << "Computed max_range " << max_range << " for split axis " << split_axis << endl;
 	return split_axis;
 }
 
@@ -280,11 +280,12 @@ template<typename T>
 ostream& operator<< (ostream &os, const Point<T> &point)
 {
 	os << "(";
-	for (typename vector<T>::iterator it = point.get_coordinates().begin();
-			it!=point.get_coordinates().end(); ++it)
+	const vector<T> &coordinates = point.get_coordinates();
+	for (typename vector<T>::const_iterator it = coordinates.cbegin();
+			it!=coordinates.cend(); it++)
 	{
 		os << *it;
-		if (it != point.get_coordinates().end()-1) os << ",";
+		if (it != coordinates.end()-1) os << ",";
 	}
 
 	os << ")";
@@ -304,7 +305,7 @@ ostream& operator<< (ostream &os, const KDTreeNode<TPoint, TCoordinate> &node)
 template<typename TPoint, typename TCoordinate>
 ostream& operator<< (ostream &os, const KDTree<TPoint, TCoordinate> &tree)
 {
-	cout << "insertion operator for tree invoked" << endl;
+	cout << "Printing tree:" << endl;
 	if (!tree.get_root()) return os;
 
 	deque<KDTreeNode<TPoint, TCoordinate> *> q;
