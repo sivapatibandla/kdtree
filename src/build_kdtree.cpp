@@ -52,10 +52,10 @@ int main() {
 	}
 
 	// build kd-tree
-	KDTree<Point<float>, float> kdtree;
+	KDTree<Point<float>, float> kdtree(points[0].get_coordinates().size());
 	kdtree.add_points(points);
 
-	//cout << kdtree << endl;
+	cout << kdtree << endl;
 
 	return 0;
 }
