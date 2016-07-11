@@ -96,22 +96,22 @@ class KDTree
 private:
 	KDTreeNode<TPoint, TCoordinate> *root;
 	int num_dimensions;
-	vector<TPoint> points;
+	vector<TPoint *> points;
 
 	void build_tree (KDTreeNode<TPoint, TCoordinate> **root,
-			const vector<TPoint> &points,
-			typename vector<TPoint>::iterator start,
-			typename vector<TPoint>::iterator end);
+			const vector<TPoint *> &points,
+			typename vector<TPoint *>::iterator start,
+			typename vector<TPoint *>::iterator end);
 	/*
 	 * Data partitioning algorithms
 	 */
-	TCoordinate compute_split_point(const vector<TPoint> &points,
-			typename vector<TPoint>::iterator start,
-			typename vector<TPoint>::iterator end,
+	TCoordinate compute_split_point(const vector<TPoint *> &points,
+			typename vector<TPoint *>::iterator start,
+			typename vector<TPoint *>::iterator end,
 			int split_axis);
-	int compute_split_axis(const vector<TPoint> &points,
-			typename vector<TPoint>::iterator start,
-			typename vector<TPoint>::iterator end);
+	int compute_split_axis(const vector<TPoint *> &points,
+			typename vector<TPoint *>::iterator start,
+			typename vector<TPoint *>::iterator end);
 
 
 
@@ -132,11 +132,11 @@ public:
 	/*
 	 * Add a point to the tree
 	 */
-	void add_point (TPoint point);
+	void add_point (TPoint *point);
 	/*
 	 * Adding multiple points to the tree
 	 */
-	void add_points (vector<TPoint> points);
+	void add_points (vector<TPoint *> points);
 	/*
 	 * Deletes a point by ID. How to assign a unique id to a point?
 	 * If not by ID, how else can we delete it?
@@ -155,7 +155,7 @@ public:
 };
 
 template<typename TPoint, typename TCoordinate>
-void KDTree<TPoint, TCoordinate>::add_points (vector<TPoint> points)
+void KDTree<TPoint, TCoordinate>::add_points (vector<TPoint *> points)
 {
 	cout << "adding no. of points: " << points.size() << endl;
 	build_tree (&this->root, points, points.begin(), points.end());
@@ -164,9 +164,9 @@ void KDTree<TPoint, TCoordinate>::add_points (vector<TPoint> points)
 template<typename TPoint, typename TCoordinate>
 void KDTree<TPoint, TCoordinate>::build_tree (
 		KDTreeNode<TPoint, TCoordinate> **root,
-		const vector<TPoint> &points,
-		typename vector<TPoint>::iterator start,
-		typename vector<TPoint>::iterator end)
+		const vector<TPoint *> &points,
+		typename vector<TPoint *>::iterator start,
+		typename vector<TPoint *>::iterator end)
 {
 	cout << "build_tree() called with start " << start - points.begin() << " end " << end - points.begin() << endl;
 
@@ -188,7 +188,8 @@ void KDTree<TPoint, TCoordinate>::build_tree (
 	if ((end-start)== 1)
 	{
 		cout << "size of sub-array 1 -- assigning the point to the leaf node " << *start << endl;
-		node->set_point(&(*start));
+		const Point<TCoordinate> *p = *start;
+		node->set_point(p);
 		return;
 	}
 
@@ -218,33 +219,33 @@ public:
 		this->dimension = dimension;
 	}
 	template<typename T>
-	bool operator()(const Point<T> left, const Point<T> right)
+	bool operator()(const Point<T> *left, const Point<T> *right)
 	{
-		return left.get_coordinate(dimension) < right.get_coordinate (dimension);
+		return left->get_coordinate(dimension) < right->get_coordinate (dimension);
 	}
 };
 
 template<typename TPoint, typename TCoordinate>
 TCoordinate KDTree<TPoint, TCoordinate>::compute_split_point(
-			const vector<TPoint> &points,
-			typename vector<TPoint>::iterator start,
-			typename vector<TPoint>::iterator end,
+			const vector<TPoint *> &points,
+			typename vector<TPoint *>::iterator start,
+			typename vector<TPoint *>::iterator end,
 			int split_axis)
 {
 
 	// compute median of the given axis
 	Comparator comp_obj(split_axis);
 	sort (start, end, comp_obj);
-	Point<TCoordinate> split_point = points[(end-start)/2];
-	cout << "Computed split point for axis " << split_axis << " point " << split_point.get_coordinate(split_axis) <<  endl;
-	return split_point.get_coordinate(split_axis);
+	Point<TCoordinate> *split_point = points[(end-start)/2];
+	cout << "Computed split point for axis " << split_axis << " point " << split_point->get_coordinate(split_axis) <<  endl;
+	return split_point->get_coordinate(split_axis);
 }
 
 template<typename TPoint, typename TCoordinate>
 int KDTree<TPoint, TCoordinate>::compute_split_axis(
-		const vector<TPoint> &points,
-		typename vector<TPoint>::iterator start,
-		typename vector<TPoint>::iterator end)
+		const vector<TPoint *> &points,
+		typename vector<TPoint *>::iterator start,
+		typename vector<TPoint *>::iterator end)
 {
 	int split_axis = 0;
 
@@ -252,13 +253,13 @@ int KDTree<TPoint, TCoordinate>::compute_split_axis(
 	TCoordinate max_range = numeric_limits<TCoordinate>::min();
 	vector<TCoordinate> min_coordinate (this->num_dimensions, numeric_limits<TCoordinate>::max());
 	vector<TCoordinate> max_coordinate (this->num_dimensions, numeric_limits<TCoordinate>::min());
-	for (typename vector<TPoint>::const_iterator it = start; it != end; it++)
+	for (typename vector<TPoint *>::const_iterator it = start; it != end; it++)
 	{
-		vector<TCoordinate> coordinates = it->get_coordinates();
+		vector<TCoordinate> coordinates = (*it)->get_coordinates();
 		for (int i = 0; i<this->num_dimensions; i++)
 		{
-			min_coordinate[i] = min (min_coordinate[i], it->get_coordinate(i));
-			max_coordinate[i] = max (max_coordinate[i], it->get_coordinate(i));
+			min_coordinate[i] = min (min_coordinate[i], (*it)->get_coordinate(i));
+			max_coordinate[i] = max (max_coordinate[i], (*it)->get_coordinate(i));
 		}
 	}
 	for (int i = 0; i<this->num_dimensions; i++)
@@ -278,7 +279,7 @@ int KDTree<TPoint, TCoordinate>::compute_split_axis(
 template<typename T>
 ostream& operator<< (ostream &os, const Point<T> &point)
 {
-	os << "(" << "size:" << point.get_coordinates().size() << " ";
+	os << "(";
 	for (typename vector<T>::iterator it = point.get_coordinates().begin();
 			it!=point.get_coordinates().end(); ++it)
 	{
@@ -296,7 +297,6 @@ ostream& operator<< (ostream &os, const KDTreeNode<TPoint, TCoordinate> &node)
 	os << "split axis: " << node.splitting_axis << " split point " << node.splitting_point;
 	const Point<TCoordinate> *p = node.get_point();
 	if (p) os << " point " << *p;
-	if (p) cout << "point " << p->get_coordinate(0) << "," << p->get_coordinate(1) << endl;
 
 	return os;
 }
@@ -314,8 +314,6 @@ ostream& operator<< (ostream &os, const KDTree<TPoint, TCoordinate> &tree)
 	{
 		curr = q.back();
 		os << *curr << " ";
-		/*if (curr->get_point())
-			cout << curr->get_point()->get_coordinates().size() << " " << curr->get_point()->get_coordinate(0) << " " << curr->get_point()->get_coordinate(1) << " ";*/
 		q.pop_back();
 		if (curr->left) q.push_front (curr->left);
 		if (curr->right) q.push_front (curr->right);
