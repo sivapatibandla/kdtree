@@ -57,7 +57,7 @@ public:
 		return this->coordinates;
 	}
 
-	int get_id ()
+	int get_id () const
 	{
 		return this->id;
 	}
@@ -93,6 +93,12 @@ public:
 	void set_point (const TPoint *point)
 	{
 		this->point = point;
+	}
+
+	bool is_leaf ()
+	{
+		if (!this->left && !this->right) return true;
+		else return false;
 	}
 };
 
@@ -157,7 +163,7 @@ public:
 	/*
 	 * Given a query point, the function returns the nearest neighbor to it.
 	 */
-	TPoint& find_nearest_point (TPoint &query_point);
+	const Point<TCoordinate> *find_nearest_point (TPoint *query_point, TCoordinate *min_distance);
 
 	/*
 	 * Given a query point, the function returns the nearest neighbor to it using a brute force algorithm
@@ -226,7 +232,7 @@ void KDTree<TPoint, TCoordinate>::build_tree (
 }
 
 template <typename TCoordinate>
-TCoordinate compute_distance (Point<TCoordinate> *point1, Point<TCoordinate> *point2)
+TCoordinate compute_distance (const Point<TCoordinate> *point1, const Point<TCoordinate> *point2)
 {
 	assert (point1->get_coordinates().size() == point2->get_coordinates().size());
 	int num_dimensions = point1->get_coordinates().size();
@@ -246,6 +252,39 @@ KDTree<TPoint, TCoordinate>::KDTree (int num_dimensions)
 {
 	this->root = NULL;
 	this->num_dimensions = num_dimensions;
+}
+
+template<typename TPoint, typename TCoordinate>
+const Point<TCoordinate> *KDTree<TPoint, TCoordinate>::find_nearest_point (TPoint *query_point, TCoordinate *min_distance)
+{
+	const Point<TCoordinate> *nearest_point = NULL;
+	if (!this->root) return NULL;
+
+	KDTreeNode<TPoint, TCoordinate> *node = this->root;
+	while (node)
+	{
+
+		int axis = node->splitting_axis;
+		TCoordinate point = node->splitting_point;
+
+		if (query_point->get_coordinate (axis) < point)
+		{
+			node = node->left;
+		}
+		else
+		{
+			node = node->right;
+		}
+
+		if (node->is_leaf())
+		{
+			nearest_point = node->get_point();
+			*min_distance = compute_distance (nearest_point, query_point);
+			break;
+		}
+	}
+
+	return nearest_point;
 }
 
 template<typename TPoint, typename TCoordinate>
