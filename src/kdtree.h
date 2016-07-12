@@ -15,6 +15,8 @@
 #include <array>
 #include <deque>
 #include <cassert>
+#include <cmath>
+#include <tuple>
 
 using namespace std;
 
@@ -37,6 +39,11 @@ public:
 		this->coordinates = coordinates;
 		this->id = id;
 	}
+	Point (vector<TCoordinate> coordinates)
+	{
+		this->coordinates = coordinates;
+		this->id = 0;
+	}
 
 	// get coordinate on the given axis by zero-based index.
 	TCoordinate get_coordinate (int index) const
@@ -48,6 +55,11 @@ public:
 	const vector<TCoordinate>& get_coordinates () const
 	{
 		return this->coordinates;
+	}
+
+	int get_id ()
+	{
+		return this->id;
 	}
 
 };
@@ -145,11 +157,22 @@ public:
 	/*
 	 * Given a query point, the function returns the nearest neighbor to it.
 	 */
-	TPoint& find_nearest_point (TPoint query_point);
+	TPoint& find_nearest_point (TPoint &query_point);
+
+	/*
+	 * Given a query point, the function returns the nearest neighbor to it using a brute force algorithm
+	 */
+	//tuple<Point<TCoordinate> *, TCoordinate> find_nearest_point_brute_force (Point<TCoordinate> *query_point);
+	Point<TCoordinate> *find_nearest_point_brute_force (Point<TCoordinate> *query_point, TCoordinate *min_distance);
 
 	KDTreeNode<TPoint, TCoordinate>* get_root () const
 	{
 		return this->root;
+	}
+
+	int get_num_dimensions ()
+	{
+		return this->num_dimensions;
 	}
 
 };
@@ -159,6 +182,7 @@ void KDTree<TPoint, TCoordinate>::add_points (vector<TPoint *> points)
 {
 	cout << "adding no. of points: " << points.size() << endl;
 	build_tree (&this->root, points, points.begin(), points.end());
+	this->points = points;
 }
 
 template<typename TPoint, typename TCoordinate>
@@ -201,6 +225,22 @@ void KDTree<TPoint, TCoordinate>::build_tree (
 	build_tree (&(*root)->right, points, end - (end-start)/2, end);
 }
 
+template <typename TCoordinate>
+TCoordinate compute_distance (Point<TCoordinate> *point1, Point<TCoordinate> *point2)
+{
+	assert (point1->get_coordinates().size() == point2->get_coordinates().size());
+	int num_dimensions = point1->get_coordinates().size();
+	TCoordinate distance = 0;
+	for (int i = 0; i<num_dimensions; i++)
+	{
+		TCoordinate temp = abs(point1->get_coordinate(i) - point2->get_coordinate(i));
+		temp *= temp;
+		distance += temp;
+	}
+	distance = sqrt (distance);
+	return distance;
+}
+
 template<typename TPoint, typename TCoordinate>
 KDTree<TPoint, TCoordinate>::KDTree (int num_dimensions)
 {
@@ -208,6 +248,27 @@ KDTree<TPoint, TCoordinate>::KDTree (int num_dimensions)
 	this->num_dimensions = num_dimensions;
 }
 
+template<typename TPoint, typename TCoordinate>
+//tuple<Point<TCoordinate> *, TCoordinate> KDTree<TPoint, TCoordinate>::find_nearest_point_brute_force (Point<TCoordinate> *query_point)
+Point<TCoordinate> *KDTree<TPoint, TCoordinate>::find_nearest_point_brute_force (Point<TCoordinate> *query_point, TCoordinate *min_distance)
+{
+	//cout << "nearest point brute force, for points size " << this->points.size() << endl;
+	*min_distance = numeric_limits<TCoordinate>::max();
+	TPoint* min_point = NULL;
+	for (typename vector<TPoint *>::iterator it = this->points.begin(); it!=this->points.end(); it++)
+	{
+		TCoordinate distance = compute_distance (*it, query_point);
+		if (distance < *min_distance)
+		{
+			//cout << "min distance: " << min_distance << endl;
+			*min_distance = distance;
+			min_point = *it;
+		}
+	}
+	cout << "nearest point using brute force: " << *min_point << " min distance " << *min_distance << endl;
+	//return make_tuple(min_point, min_distance);
+	return min_point;
+}
 
 class Comparator
 {
@@ -326,6 +387,6 @@ ostream& operator<< (ostream &os, const KDTree<TPoint, TCoordinate> &tree)
 	return os;
 }
 
-
+std::vector<std::string> split(const std::string &text, char sep);
 
 #endif /* KDTREE_H_ */

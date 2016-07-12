@@ -5,6 +5,7 @@
  *      Author: Siva
  */
 
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -13,17 +14,6 @@
 
 
 using namespace std;
-
-std::vector<std::string> split(const std::string &text, char sep) {
-  std::vector<std::string> tokens;
-  std::size_t start = 0, end = 0;
-  while ((end = text.find(sep, start)) != std::string::npos) {
-    tokens.push_back(text.substr(start, end - start));
-    start = end + 1;
-  }
-  tokens.push_back(text.substr(start));
-  return tokens;
-}
 
 vector <Point<float> *> read_points_from_file (const char *file_name, int &num_dimensions)
 {
@@ -78,8 +68,11 @@ vector <Point<float> *> read_points_from_file (const char *file_name, int &num_d
 	return points;
 }
 
+#ifdef BUILD
 int main() {
-
+#else
+KDTree<Point<float>, float> *build_main() {
+#endif
 	cout << "!!!Application to build a KD Tree and save it to disk!!!" << endl; // prints !!!Hello World!!!
 
 	int num_dimensions = 0;
@@ -87,13 +80,18 @@ int main() {
 	//const char *file_name = "/Users/Siva/Documents/workspace/kdtree/src/points.csv";
 	vector <Point<float> *> points = read_points_from_file (file_name, num_dimensions);
 
+	KDTree<Point<float>, float> *kdtree = NULL;
 	// build kd-tree
 	if (points.size() > 0)
 	{
-		KDTree<Point<float>, float> kdtree(num_dimensions);
-		kdtree.add_points(points);
-		cout << kdtree << endl;
+		kdtree = new KDTree<Point<float>, float>(num_dimensions);
+		kdtree->add_points(points);
+		//cout << *kdtree << endl;
 	}
 
+#ifdef BUILD
 	return 0;
+#else
+	return kdtree;
+#endif
 }
