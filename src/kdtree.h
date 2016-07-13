@@ -379,7 +379,7 @@ void KDTree<TPoint, TCoordinate>::find_nearest_point_recursive_internal (KDTreeN
 
 	find_nearest_point_recursive_internal (closer_node, query_point, nearest_point);
 
-	if (nearest_point)
+	if (*nearest_point)
 	{
 		TCoordinate distance_to_splitting_axis = curr_node->splitting_point - query_point->get_coordinate(curr_node->splitting_axis);
 
