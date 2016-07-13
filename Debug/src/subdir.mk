@@ -9,9 +9,6 @@ CPP_SRCS += \
 ../src/query_kdtree.cpp \
 ../src/test.cpp 
 
-O_SRCS += \
-../src/build_kdtree.o 
-
 OBJS += \
 ./src/build_kdtree.o \
 ./src/kdtree.o \

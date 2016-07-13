@@ -39,7 +39,7 @@ int main() {
 	cout << *kdtree << endl;
 
 	const char *file_name = "/Users/Siva/Documents/workspace/kdtree/src/query_data.csv";
-	const char *out_file_name = "/Users/Siva/Documents/workspace/kdtree/src/nearest_points_indices_opt.csv";
+	const char *out_file_name = "/Users/Siva/Documents/workspace/kdtree/src/nearest_points_indices_rec_2.csv";
 	ifstream file (file_name, ifstream::in);
 	ofstream out_file (out_file_name, ofstream::out);
 
@@ -63,7 +63,10 @@ int main() {
 		float min_distance =  0;
 		const Point<float> *min_point = NULL;
 
-		min_point = kdtree->find_nearest_point(&query_point, &min_distance);
+		//min_point = kdtree->find_nearest_point(&query_point, &min_distance);
+		cout << "query point " << query_point << endl;
+		NearestPoint<float> *nearest_point = NULL;
+		kdtree->find_nearest_point_recursive(&query_point, &nearest_point);
 		//cout << "kd tree nearest point " << *min_point  << " " << min_point->get_id() << endl;
 
 		//tuple <Point<float> *, float> min_tuple;
@@ -73,7 +76,9 @@ int main() {
 				get<0>(min_tuple)->get_id() << ",distance:" << get<1>(min_tuple) << endl;*/
 		/*out_file << "Q:" << query_point << ",P:" << *min_point << ",index:" <<
 						min_point->get_id() << ",distance:" << min_distance << endl;*/
-		out_file << min_point->get_id() << "," << min_distance << endl;
+		//out_file << min_point->get_id() << "," << min_distance << endl;
+		out_file << nearest_point->get_id() << "," << nearest_point->get_distance() << endl;
+
 
 	}
 	out_file.close();

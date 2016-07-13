@@ -28,7 +28,7 @@ using namespace std;
 template <typename TCoordinate>
 class Point
 {
-private:
+protected:
 	vector<TCoordinate> coordinates; // point's location in space in coordinates
 	int id; // unique id
 
@@ -38,6 +38,10 @@ public:
 	{
 		this->coordinates = coordinates;
 		this->id = id;
+	}
+	Point ()
+	{
+		this->id = -1;
 	}
 	Point (vector<TCoordinate> coordinates)
 	{
@@ -62,6 +66,43 @@ public:
 		return this->id;
 	}
 
+};
+
+template <typename TCoordinate>
+class NearestPoint : public Point<TCoordinate>
+{
+private:
+	// distance to query point
+	TCoordinate distance;
+
+public:
+	NearestPoint ()
+	{
+		this->distance = 0;
+	}
+
+	void set_distance (TCoordinate distance)
+	{
+		this->distance = distance;
+	}
+	TCoordinate get_distance ()
+	{
+		return this->distance;
+	}
+	void set_coordiantes (vector<TCoordinate> coordinates)
+	{
+		this->coordinates = coordinates;
+	}
+	void set_id (int id)
+	{
+		this->id = id;
+	}
+	void update (const Point<TCoordinate> *point, TCoordinate distance)
+	{
+		this->coordinates = point->get_coordinates();
+		this->id = point->get_id();
+		this->distance = distance;
+	}
 };
 
 template <typename TPoint, typename TCoordinate>
@@ -120,6 +161,8 @@ private:
 			const vector<TPoint *> &points,
 			typename vector<TPoint *>::iterator start,
 			typename vector<TPoint *>::iterator end);
+	void find_nearest_point_recursive_internal (KDTreeNode<TPoint, TCoordinate> *curr_node,
+			Point<TCoordinate> *query_point, NearestPoint<TCoordinate> **nearest_point);
 	/*
 	 * Data partitioning algorithms
 	 */
@@ -170,6 +213,12 @@ public:
 	 */
 	//tuple<Point<TCoordinate> *, TCoordinate> find_nearest_point_brute_force (Point<TCoordinate> *query_point);
 	Point<TCoordinate> *find_nearest_point_brute_force (Point<TCoordinate> *query_point, TCoordinate *min_distance);
+
+	/*
+	 * Given a query point, the function returns the nearest neighbor to it using
+	 *  recursive kd-tree traversal algorithm
+	 */
+	void find_nearest_point_recursive (Point<TCoordinate> *query_point, NearestPoint<TCoordinate> **nearest_point);
 
 	KDTreeNode<TPoint, TCoordinate>* get_root () const
 	{
@@ -285,6 +334,73 @@ const Point<TCoordinate> *KDTree<TPoint, TCoordinate>::find_nearest_point (TPoin
 	}
 
 	return nearest_point;
+}
+
+template<typename TPoint, typename TCoordinate>
+void KDTree<TPoint, TCoordinate>::find_nearest_point_recursive_internal (KDTreeNode<TPoint, TCoordinate> *curr_node,
+		Point<TCoordinate> *query_point, NearestPoint<TCoordinate> **nearest_point)
+{
+	if(!curr_node) return;
+
+	const Point<TCoordinate> *curr_point = curr_node->get_point();
+	if (curr_node->is_leaf())
+	{
+		if (!curr_point) return;
+
+		TCoordinate distance = compute_distance (query_point, curr_point);
+
+		if (!*nearest_point)
+		{
+			*nearest_point = new NearestPoint<TCoordinate>();
+			(*nearest_point)->update (curr_point, distance);
+		}
+		else if (distance < (*nearest_point)->get_distance())
+		{
+			//cout << "updating nearest point id " << (*nearest_point)->get_id() << " distance " << (*nearest_point)->get_distance() << endl;
+			(*nearest_point)->update (curr_point, distance);
+		}
+
+		return;
+	}
+
+	KDTreeNode <TPoint, TCoordinate> *closer_node = NULL;
+	KDTreeNode <TPoint, TCoordinate> *farther_node = NULL;
+
+	if (query_point->get_coordinate(curr_node->splitting_axis) < curr_node->splitting_point)
+	{
+		closer_node = curr_node->left;
+		farther_node = curr_node->right;
+	}
+	else
+	{
+		closer_node = curr_node->right;
+		farther_node = curr_node->left;
+	}
+
+	find_nearest_point_recursive_internal (closer_node, query_point, nearest_point);
+
+	if (nearest_point)
+	{
+		TCoordinate distance_to_splitting_axis = curr_node->splitting_point - query_point->get_coordinate(curr_node->splitting_axis);
+
+		if ((distance_to_splitting_axis-0.5 /*error*/) <= (*nearest_point)->get_distance())
+		{
+			//cout << "finding nearest point for farther node " << farther_node->splitting_point << endl;
+			find_nearest_point_recursive_internal (farther_node, query_point, nearest_point);
+		}
+	}
+	else
+	{
+		find_nearest_point_recursive_internal (farther_node, query_point, nearest_point);
+	}
+}
+
+
+template<typename TPoint, typename TCoordinate>
+void KDTree<TPoint, TCoordinate>::find_nearest_point_recursive (Point<TCoordinate> *query_point, NearestPoint<TCoordinate> **nearest_point)
+{
+	find_nearest_point_recursive_internal (this->root, query_point, nearest_point);
+
 }
 
 template<typename TPoint, typename TCoordinate>
