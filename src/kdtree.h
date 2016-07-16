@@ -18,6 +18,9 @@
 #include <cmath>
 #include <tuple>
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/vector.hpp>
+
 using namespace std;
 
 /*
@@ -32,6 +35,15 @@ protected:
 	vector<TCoordinate> coordinates; // point's location in space in coordinates
 	int id; // unique id
 
+	/* serialization/de-serialization of node */
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize (Archive & ar, const unsigned int version)
+	{
+		ar & coordinates;
+		ar & id;
+	}
+
 public:
 	// constructor: takes a list of coordinates and unique id
 	Point (vector<TCoordinate> coordinates, int id)
@@ -39,14 +51,14 @@ public:
 		this->coordinates = coordinates;
 		this->id = id;
 	}
-	Point ()
-	{
-		this->id = -1;
-	}
 	Point (vector<TCoordinate> coordinates)
 	{
 		this->coordinates = coordinates;
-		this->id = 0;
+		this->id = -1;
+	}
+	Point ()
+	{
+		this->id = -1;
 	}
 
 	// get coordinate on the given axis by zero-based index.
@@ -111,6 +123,18 @@ class KDTreeNode
 private:
 	// reference to a Point object.
 	const TPoint *point;
+
+	/* serialization/de-serialization of node */
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize (Archive & ar, const unsigned int version)
+	{
+		ar & point;
+		ar & left;
+		ar & right;
+		ar & splitting_point;
+		ar & splitting_axis;
+	}
 public:
 	KDTreeNode *left, *right;
 	TCoordinate splitting_point;
@@ -174,22 +198,32 @@ private:
 			typename vector<TPoint *>::iterator start,
 			typename vector<TPoint *>::iterator end);
 
+	/* serialization/deserialization of tree */
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize (Archive & ar, const unsigned int version)
+	{
+		ar & root;
+		ar & num_dimensions;
+		ar & points;
+	}
 
 
 public:
 	KDTree (int num_dimensions);
+	KDTree ();
 
 	/*
 	 * Function saves tree to a file on disk
 	 * File format: ?
 	 */
-	void save_tree ();
+	void save_tree (const char* archive_file_path);
 
 	/*
 	 * Function builds tree from a file stored in disk.
 	 * File format: ?
 	 */
-	void read_tree (string filename);
+	void load_tree (const char* archive_file_path);
 	/*
 	 * Add a point to the tree
 	 */
@@ -301,6 +335,13 @@ KDTree<TPoint, TCoordinate>::KDTree (int num_dimensions)
 {
 	this->root = NULL;
 	this->num_dimensions = num_dimensions;
+}
+
+template<typename TPoint, typename TCoordinate>
+KDTree<TPoint, TCoordinate>::KDTree ()
+{
+	this->root = NULL;
+	this->num_dimensions = -1;
 }
 
 template<typename TPoint, typename TCoordinate>
@@ -541,7 +582,5 @@ ostream& operator<< (ostream &os, const KDTree<TPoint, TCoordinate> &tree)
 
 	return os;
 }
-
-std::vector<std::string> split(const std::string &text, char sep);
 
 #endif /* KDTREE_H_ */
