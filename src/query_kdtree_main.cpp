@@ -56,5 +56,6 @@ int main (int argc, char **argv)
 	}
 
 	cout << "Exiting query KD-Tree application" << endl;
+	delete kdtree;
 
 }

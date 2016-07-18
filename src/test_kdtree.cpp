@@ -79,6 +79,9 @@ TEST (TestKDTree, perf_test)
 		/*std::cout << "query no: " << index << " " << *query_points[index] << " kd-id: " << nearest_point->get_id() << " " << nearest_point->get_distance() << " bf id: " << nearest_point_brute_force->get_id()
 				<< " " << nearest_point_brute_force->get_distance() << " nearest point " << *nearest_point << " bf " << *nearest_point_brute_force << std::endl;*/
 		ASSERT_EQ (nearest_point->get_id(), nearest_point_brute_force->get_id());
+
+		delete nearest_point;
+		delete nearest_point_brute_force;
 		index++;
 	}
 

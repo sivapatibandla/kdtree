@@ -157,6 +157,12 @@ public:
 		this->right = NULL;
 		this->point = NULL;
 	}
+	~KDTreeNode ()
+	{
+		delete left;
+		delete right;
+		if (point) delete point;
+	}
 
 	const TPoint *get_point () const;
 	void set_point (const TPoint *point)
@@ -216,6 +222,14 @@ private:
 public:
 	KDTree (int num_dimensions);
 	KDTree ();
+	~KDTree ()
+	{
+		delete root;
+		for (typename vector<TPoint *>::iterator it = this->points.begin(); it!=this->points.begin();it++)
+		{
+			if(*it) delete *it;
+		}
+	}
 
 	/*
 	 * Function saves tree to a file on disk
@@ -416,6 +430,7 @@ void KDTree<TPoint, TCoordinate>::find_nearest_point_recursive_internal (KDTreeN
 	KDTreeNode <TPoint, TCoordinate> *closer_node = NULL;
 	KDTreeNode <TPoint, TCoordinate> *farther_node = NULL;
 
+	// based on splitting axis and point determine which node is the closer one among left and right nodes
 	if (query_point->get_coordinate(curr_node->splitting_axis) < curr_node->splitting_point)
 	{
 		closer_node = curr_node->left;
@@ -433,6 +448,7 @@ void KDTree<TPoint, TCoordinate>::find_nearest_point_recursive_internal (KDTreeN
 	{
 		TCoordinate distance_to_splitting_axis = abs(curr_node->splitting_point - query_point->get_coordinate(curr_node->splitting_axis));
 
+		// prune the branches which are at least as far as the distance to the splitting axis
 		if ((distance_to_splitting_axis*distance_to_splitting_axis /*error*/) <= (*nearest_point)->get_distance())
 		{
 			find_nearest_point_recursive_internal (farther_node, query_point, nearest_point);
@@ -440,6 +456,7 @@ void KDTree<TPoint, TCoordinate>::find_nearest_point_recursive_internal (KDTreeN
 	}
 	else
 	{
+		// until a nearest point is computed, search through both the left and right sub-trees.
 		find_nearest_point_recursive_internal (farther_node, query_point, nearest_point);
 	}
 }

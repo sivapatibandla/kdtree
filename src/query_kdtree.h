@@ -53,6 +53,7 @@ void compute_nearest_neighbors (KDTree<Point<TCoordinate>, TCoordinate> *kdtree,
 		if (nearest_point)
 		{
 			out_file << nearest_point->get_id() << "," << sqrt(nearest_point->get_distance()) << endl;
+			delete nearest_point;
 		}
 	}
 

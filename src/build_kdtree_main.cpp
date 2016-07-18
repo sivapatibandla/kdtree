@@ -48,5 +48,6 @@ int main (int argc, char **argv)
 	}
 
 	cout << "Exiting build KD-Tree application"  << endl;
+	delete kdtree;
 }
 
