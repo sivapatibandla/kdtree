@@ -2,16 +2,13 @@ CC = clang++ -std=c++11
 DEBUG = -g
 CFLAGS = -Wall -c $(DEBUG)
 LFLAGS = -Wall $(DEBUG)
-LIBS = -L/opt/local/lib -lboost_serialization-mt
+LIBS = -L/opt/local/lib -lboost_serialization-mt -lgtest -lpthread
 INCLUDES = -I/opt/local/include
 BUILD_OBJS = build_kdtree_main.o build_kdtree.o util.o
 QUERY_OBJS = query_kdtree_main.o query_kdtree.o util.o
+TEST_OBJS = test_kdtree.o
 
-#TEST_LFLAGS = -lpthread -lgtest
-#TARGET_OBJS = query_kdtree.o query_kdtree_main.o build_kdtree.o build_kdtree_main.o
-#TEST_OBJS = test_query_kdtree.o learn_gtest.o
-
-all: query_kdtree build_kdtree
+all: query build test
 
 #kdtree.o: kdtree.h
 #	$(CC) $(CFLAGS) $(INCLUDES) kdtree.h
@@ -36,6 +33,12 @@ query_kdtree_main.o: query_kdtree_main.cpp
 
 query: $(QUERY_OBJS)
 	$(CC) $(LFLAGS) $(LIBS) $(QUERY_OBJS) -o query
+	
+test_kdtree.o: test_kdtree.cpp kdtree.h
+	$(CC) $(CFLAGS) $(INCLUDES) test_kdtree.cpp kdtree.h
+
+test: $(TEST_OBJS)
+	$(CC) $(LFLAGS) $(LIBS) $(TEST_OBJS) -o test
 
 clean:
-	\rm *.o build query
+	\rm *.o build query test

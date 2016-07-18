@@ -60,6 +60,10 @@ public:
 	{
 		this->id = -1;
 	}
+	~Point()
+	{
+
+	}
 
 	// get coordinate on the given axis by zero-based index.
 	TCoordinate get_coordinate (int index) const
@@ -246,7 +250,7 @@ public:
 	 * Given a query point, the function returns the nearest neighbor to it using a brute force algorithm
 	 */
 	//tuple<Point<TCoordinate> *, TCoordinate> find_nearest_point_brute_force (Point<TCoordinate> *query_point);
-	Point<TCoordinate> *find_nearest_point_brute_force (Point<TCoordinate> *query_point, TCoordinate *min_distance);
+	void find_nearest_point_brute_force (Point<TCoordinate> *query_point, NearestPoint<TCoordinate> **nearest_point);
 
 	/*
 	 * Given a query point, the function returns the nearest neighbor to it using
@@ -314,6 +318,9 @@ void KDTree<TPoint, TCoordinate>::build_tree (
 	build_tree (&(*root)->right, points, end - (end-start)/2, end);
 }
 
+/*
+ * Computes distance-squared for efficiency
+ */
 template <typename TCoordinate>
 TCoordinate compute_distance (const Point<TCoordinate> *point1, const Point<TCoordinate> *point2)
 {
@@ -326,7 +333,7 @@ TCoordinate compute_distance (const Point<TCoordinate> *point1, const Point<TCoo
 		temp *= temp;
 		distance += temp;
 	}
-	distance = sqrt (distance);
+	//distance = sqrt (distance);
 	return distance;
 }
 
@@ -344,6 +351,9 @@ KDTree<TPoint, TCoordinate>::KDTree ()
 	this->num_dimensions = -1;
 }
 
+/*
+ * Greedy algorithm
+ */
 template<typename TPoint, typename TCoordinate>
 const Point<TCoordinate> *KDTree<TPoint, TCoordinate>::find_nearest_point (TPoint *query_point, TCoordinate *min_distance)
 {
@@ -388,7 +398,7 @@ void KDTree<TPoint, TCoordinate>::find_nearest_point_recursive_internal (KDTreeN
 	{
 		if (!curr_point) return;
 
-		TCoordinate distance = compute_distance (query_point, curr_point);
+		TCoordinate distance = compute_distance (query_point, curr_point); // squared distance for efficiency
 
 		if (!*nearest_point)
 		{
@@ -397,7 +407,6 @@ void KDTree<TPoint, TCoordinate>::find_nearest_point_recursive_internal (KDTreeN
 		}
 		else if (distance < (*nearest_point)->get_distance())
 		{
-			//cout << "updating nearest point id " << (*nearest_point)->get_id() << " distance " << (*nearest_point)->get_distance() << endl;
 			(*nearest_point)->update (curr_point, distance);
 		}
 
@@ -422,11 +431,10 @@ void KDTree<TPoint, TCoordinate>::find_nearest_point_recursive_internal (KDTreeN
 
 	if (*nearest_point)
 	{
-		TCoordinate distance_to_splitting_axis = curr_node->splitting_point - query_point->get_coordinate(curr_node->splitting_axis);
+		TCoordinate distance_to_splitting_axis = abs(curr_node->splitting_point - query_point->get_coordinate(curr_node->splitting_axis));
 
-		if ((distance_to_splitting_axis-0.5 /*error*/) <= (*nearest_point)->get_distance())
+		if ((distance_to_splitting_axis*distance_to_splitting_axis - 1 /*error*/) <= (*nearest_point)->get_distance())
 		{
-			//cout << "finding nearest point for farther node " << farther_node->splitting_point << endl;
 			find_nearest_point_recursive_internal (farther_node, query_point, nearest_point);
 		}
 	}
@@ -445,25 +453,20 @@ void KDTree<TPoint, TCoordinate>::find_nearest_point_recursive (Point<TCoordinat
 }
 
 template<typename TPoint, typename TCoordinate>
-//tuple<Point<TCoordinate> *, TCoordinate> KDTree<TPoint, TCoordinate>::find_nearest_point_brute_force (Point<TCoordinate> *query_point)
-Point<TCoordinate> *KDTree<TPoint, TCoordinate>::find_nearest_point_brute_force (Point<TCoordinate> *query_point, TCoordinate *min_distance)
+void KDTree<TPoint, TCoordinate>::find_nearest_point_brute_force (Point<TCoordinate> *query_point,
+		NearestPoint<TCoordinate> **nearest_point)
 {
-	//cout << "nearest point brute force, for points size " << this->points.size() << endl;
-	*min_distance = numeric_limits<TCoordinate>::max();
-	TPoint* min_point = NULL;
+	*nearest_point = new NearestPoint<TCoordinate>();
+	TCoordinate min_distance = numeric_limits<TCoordinate>::max();
 	for (typename vector<TPoint *>::iterator it = this->points.begin(); it!=this->points.end(); it++)
 	{
 		TCoordinate distance = compute_distance (*it, query_point);
-		if (distance < *min_distance)
+		if (distance < min_distance)
 		{
-			//cout << "min distance: " << min_distance << endl;
-			*min_distance = distance;
-			min_point = *it;
+			min_distance = distance;
+			(*nearest_point)->update (*it, min_distance);
 		}
 	}
-	cout << "nearest point using brute force: " << *min_point << " min distance " << *min_distance << endl;
-	//return make_tuple(min_point, min_distance);
-	return min_point;
 }
 
 class Comparator
@@ -493,7 +496,7 @@ TCoordinate KDTree<TPoint, TCoordinate>::compute_split_point(
 	// compute median of the given axis
 	Comparator comp_obj(split_axis);
 	sort (start, end, comp_obj);
-	Point<TCoordinate> *split_point = points[(end-start)/2];
+	Point<TCoordinate> *split_point = points[(start-points.begin()) + (end-start)/2];
 	//cout << "Computed split point for axis " << split_axis << " point " << split_point->get_coordinate(split_axis) <<  endl;
 	return split_point->get_coordinate(split_axis);
 }

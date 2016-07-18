@@ -13,6 +13,7 @@
 #include <fstream>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
+#include <cmath>
 
 #include "kdtree.h"
 #include "util.h"
@@ -46,9 +47,11 @@ void compute_nearest_neighbors (KDTree<Point<float>, float> *kdtree,
 		Point<float> query_point (coordinates);
 		NearestPoint<float> *nearest_point = NULL;
 		kdtree->find_nearest_point_recursive(&query_point, &nearest_point);
-		out_file << nearest_point->get_id() << "," << nearest_point->get_distance() << endl;
 
-
+		if (nearest_point)
+		{
+			out_file << nearest_point->get_id() << "," << sqrt(nearest_point->get_distance()) << endl;
+		}
 	}
 
 	file.close();
