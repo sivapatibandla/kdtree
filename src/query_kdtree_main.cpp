@@ -14,6 +14,12 @@
 
 using namespace std;
 
+/*
+ * Inputs:
+ * 1. full path for file containing query points
+ * 2. full path for the archive file containing kd-tree
+ * 3. full path for generating output file (path should include filename)
+ */
 int main (int argc, char **argv)
 {
 	cout << "Launching KD-Tree query application..." << endl;
@@ -36,7 +42,7 @@ int main (int argc, char **argv)
 
 	// load kd-tree
 	cout << "Loading KD-Tree..." << endl;
-	KDTree<Point<float>, float> *kdtree = load_kdtree (archive_file_path);
+	KDTree<Point<double>, double> *kdtree = load_kdtree<double> (archive_file_path);
 
 	// compute nearest neighbors
 	if (kdtree)

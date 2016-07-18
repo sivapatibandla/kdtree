@@ -38,13 +38,13 @@ int main (int argc, char **argv)
 
 	// build KD-tree
 	cout << "Building KD-Tree..." << endl;
-	KDTree<Point<float>, float> *kdtree = build_kdtree (points_file_path);
+	KDTree<Point<double>, double> *kdtree = build_kdtree<double> (points_file_path);
 
 	// save KD-tree
 	if (kdtree)
 	{
 		cout << "Saving KD-Tree..." << endl;
-		save_kdtree (kdtree, archive_file_path);
+		save_kdtree<double> (kdtree, archive_file_path);
 	}
 
 	cout << "Exiting build KD-Tree application"  << endl;
