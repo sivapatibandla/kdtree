@@ -63,12 +63,14 @@ TEST (TestKDTree, perf_test)
 		NearestPoint<double> *nearest_point = NULL;
 		NearestPoint<double> *nearest_point_brute_force = NULL;
 
+		// measure time taken by KD-tree search algorithm
 		boost::posix_time::ptime time_start(boost::posix_time::microsec_clock::local_time());
 		kdtree.find_nearest_point_recursive(query_points[index], &nearest_point);
 		boost::posix_time::ptime time_end(boost::posix_time::microsec_clock::local_time());
 		boost::posix_time::time_duration duration(time_end - time_start);
 		kdtree_runtime_usec += duration.total_microseconds();
 
+		// measure time taken by the brute force search algorithm
 		boost::posix_time::ptime time_start_bf(boost::posix_time::microsec_clock::local_time());
 		kdtree.find_nearest_point_brute_force(query_points[index], &nearest_point_brute_force);
 		boost::posix_time::ptime time_end_bf(boost::posix_time::microsec_clock::local_time());
@@ -90,6 +92,15 @@ TEST (TestKDTree, perf_test)
 	brute_force_runtime_usec /= num_query_points; // average
 	std::cout << "kd-tree avg usec: " <<  kdtree_runtime_usec << " brute force avg usec: " << brute_force_runtime_usec << std::endl;
 	ASSERT_LE (kdtree_runtime_usec, brute_force_runtime_usec);
+}
+
+TEST (TestKDTree, empty_tree_test)
+{
+	vector <Point<double> *> query_points;
+	vector<double> coordinates = {1};
+	query_points.push_back(new Point<double>(coordinates));
+	KDTree <Point<double>, double> kdtree(1);
+	kdtree.find_nearest_point_recursive(query_points[0], NULL);
 }
 
 int main (int argc, char **argv)
